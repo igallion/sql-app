@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM python:3.12.2-slim-bullseye
+FROM python:3.14.0b4-slim-bullseye
 
 WORKDIR /sql-app
 
