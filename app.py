@@ -4,6 +4,7 @@ import time
 from fastapi import FastAPI, Response, status, HTTPException
 import hvac
 import logging
+from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -79,3 +80,7 @@ def get_sql_app(response: Response):
     resp = sql_app()
     logger.info(f"Returning response: {resp}")
     return {"message": f"{resp}"}
+
+@app.get("/metrics")
+def get_metrics():
+    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
