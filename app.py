@@ -4,7 +4,8 @@ import time
 from fastapi import FastAPI, Response, status, HTTPException
 import hvac
 import logging
-from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import Counter, Gauge, Histogram, make_asgi_app
+import time
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -17,16 +18,22 @@ def connect_sql(USERNAME, PASSWORD, SERVER, DATABASE):
 
     connectionString = f'DRIVER={{ODBC Driver 18 for SQL Server}};DATABASE={DATABASE};SERVER={SERVER};UID={USERNAME};PWD={PASSWORD};Encrypt=no'
     logger.info(f"Connection String: {connectionString}")
-    conn = pyodbc.connect(connectionString)
-    cursor = conn.cursor()
-    SQL_QUERY = "SELECT * FROM location"
-    logger.info(f"Running query: {SQL_QUERY}")
-    cursor.execute(SQL_QUERY)
-    resp = cursor.fetchall()
+    start_time = time.time()
+    try:
+        conn = pyodbc.connect(connectionString)
+        cursor = conn.cursor()
+        SQL_QUERY = "SELECT * FROM location"
+        logger.info(f"Running query: {SQL_QUERY}")
+        cursor.execute(SQL_QUERY)
+        resp = cursor.fetchall()
 
-    logger.info("Closing connection to database")
-    cursor.close()
-    conn.close()
+        logger.info("Closing connection to database")
+        cursor.close()
+        conn.close()
+    finally:
+        end_time = time.time()
+        duration = end_time - start_time
+        SQL_REQUEST_LATENCY.labels(operation='read', table='location').observe(duration)
     return resp
 
 #Main SQL app
@@ -54,6 +61,22 @@ def sql_app():
     return resp1
 
 app = FastAPI()
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
+
+#Initialize Prometheus metrics
+REQUEST_COUNTER = Counter(
+    "app_requests_total",
+    "Total number of requests to the app",
+    ["endpoint"]
+)
+
+SQL_REQUEST_LATENCY = Histogram(
+    'db_request_latency_seconds',
+    'Database request latency in seconds',
+    ['operation', 'table']
+)
+
 
 #Initialize connection to Vault
 VAULT_ADDR = os.getenv('VAULT_ADDR')
@@ -72,15 +95,13 @@ vault_client.auth.userpass.login(
 #Define api routes
 @app.get("/")
 def read_root():
+    REQUEST_COUNTER.labels(endpoint="/").inc()
     logger.info("Returning message")
     return {"Message": "Hello World"}
 
 @app.get("/sql-app", status_code=200)
 def get_sql_app(response: Response):
+    REQUEST_COUNTER.labels(endpoint='/sql-app').inc()
     resp = sql_app()
     logger.info(f"Returning response: {resp}")
     return {"message": f"{resp}"}
-
-@app.get("/metrics")
-def get_metrics():
-    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
