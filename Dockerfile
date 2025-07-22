@@ -20,6 +20,6 @@ RUN pip3 install --no-cache -r requirements.txt
 RUN wget https://releases.hashicorp.com/vault/1.20.0/vault_1.20.0_linux_amd64.zip \
     && unzip -o vault_1.20.0_linux_amd64.zip -d /usr/local/bin/
 
-COPY app.py /sql-app/
+COPY app.py main.py /sql-app/
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["python", "main.py"]

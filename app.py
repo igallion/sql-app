@@ -6,6 +6,7 @@ import hvac
 import logging
 from prometheus_client import Counter, Gauge, Histogram, make_asgi_app
 import time
+import ssl
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -60,6 +61,23 @@ def sql_app():
         logger.error(f"Failed to connect to database: {str(e)}")
     return resp1
 
+logger.info("Initializing Vault connection")
+#Initialize connection to Vault
+VAULT_ADDR = os.getenv('VAULT_ADDR')
+VAULT_USER = os.getenv('VAULT_USER')
+VAULT_PASS = os.getenv('VAULT_PASS')
+
+vault_client = hvac.Client(
+    url = VAULT_ADDR
+)
+
+vault_client.auth.userpass.login(
+    username = VAULT_USER,
+    password = VAULT_PASS
+)
+
+logger.info("Initializing FastAPI app")
+
 app = FastAPI()
 metrics_app = make_asgi_app()
 app.mount("/metrics", metrics_app)
@@ -75,21 +93,6 @@ SQL_REQUEST_LATENCY = Histogram(
     'db_request_latency_seconds',
     'Database request latency in seconds',
     ['operation', 'table']
-)
-
-
-#Initialize connection to Vault
-VAULT_ADDR = os.getenv('VAULT_ADDR')
-VAULT_USER = os.getenv('VAULT_USER')
-VAULT_PASS = os.getenv('VAULT_PASS')
-
-vault_client = hvac.Client(
-    url = VAULT_ADDR
-)
-
-vault_client.auth.userpass.login(
-    username = VAULT_USER,
-    password = VAULT_PASS
 )
 
 #Define api routes
