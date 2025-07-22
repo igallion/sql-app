@@ -4,7 +4,7 @@ FROM python:3.12.11-slim-bullseye
 
 WORKDIR /sql-app
 
-EXPOSE 80
+EXPOSE 443
 
 COPY requirements.txt /sql-app/
 
