@@ -1,0 +1,7 @@
+environment: dev
+vault:
+  VAULT_ADDR: http://vault_server_demo:8200
+  VAULT_DB_MOUNT_POINT: database
+  VAULT_DB_ROLE: mssql-role
+  VAULT_KV_MOUNT_POINT: BusinessUnit1
+  VAULT_KV_SECRET_DB_INFO: sql-app/dev/dbinfo

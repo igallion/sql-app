@@ -7,6 +7,7 @@ import logging
 from prometheus_client import Counter, Gauge, Histogram, make_asgi_app
 import time
 import ssl
+import yaml
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -39,18 +40,16 @@ def connect_sql(USERNAME, PASSWORD, SERVER, DATABASE):
 
 #Main SQL app
 def sql_app():
-    roleName = "mssql-role"
-    db_mount_point = 'database'
     logger.info("Requesting database credentials from Vault")
     creds = vault_client.secrets.database.generate_credentials(
-        name = roleName,
-        mount_point = db_mount_point
+        name = config['vault']['VAULT_DB_ROLE'],
+        mount_point = config['vault']['VAULT_DB_MOUNT_POINT']
     )
     
     logger.info("Requesting DB Server and Database name from Vault")
     dbInfo = vault_client.secrets.kv.v1.read_secret(
-        path = 'sql-app/dev/dbinfo',
-        mount_point = 'BusinessUnit1'
+        path = config['vault']['VAULT_KV_SECRET_DB_INFO'],
+        mount_point = config['vault']['VAULT_KV_MOUNT_POINT']
     )
     logger.info(f"DB info: Server {dbInfo['data']['db_server']} Database Name: {dbInfo['data']['db_database']}")
 
@@ -60,6 +59,10 @@ def sql_app():
     except pyodbc.InterfaceError as e:
         logger.error(f"Failed to connect to database: {str(e)}")
     return resp1
+
+logger.info("Loading config")
+with open("config.yml", "r") as f:
+    config = yaml.safe_load(f)
 
 logger.info("Initializing Vault connection")
 #Initialize connection to Vault
