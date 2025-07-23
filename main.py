@@ -2,9 +2,15 @@ import uvicorn
 import hvac
 import os
 import logging
+import yaml
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
+
+logger.info("Loading config")
+with open("config.yml", "r") as f:
+    config = yaml.safe_load(f)
+
 logger.info("Initializing Vault connection")
 #Initialize connection to Vault
 VAULT_ADDR = os.getenv('VAULT_ADDR')
@@ -21,8 +27,8 @@ vault_client.auth.userpass.login(
 )
 
 vault_cert_request = vault_client.secrets.pki.generate_certificate(
-    mount_point='pki_int',
-    name="sql-app",
+    mount_point=config['vault']['VAULT_PKI_MOUNT_POINT'],
+    name=config['vault']['VAULT_PKI_ROLE'],
     common_name="sql-app",
     extra_params={'alt_names': 'localhost'}
 )
