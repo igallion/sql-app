@@ -3,7 +3,7 @@
 SQL-APP is a simple RESTful API built using Python's FastAPI library to demonstrate Vault's Public Key Infrastructure (PKI) and Database secrets engine capabilities. The app retrieves an SSL certificate on startup and uses database credentials managed by Vault for backend database requests. Usage metrics are exposed to Prometheus for usage and availability monitoring.
 
 ## Getting Started
-A fully configured HashiCorp Vault server is required for this application. See my Vault_DB_Engine project (linked at the end) for more information
+A fully configured HashiCorp Vault server is required for this application. See my Vault_DB_Engine project (linked at the end) for more information.
 
 ## How It's Made:
 
